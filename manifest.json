@@ -1,0 +1,29 @@
+{
+  "manifest_version": 2,
+  "name": "Quicker Add",
+  "version": "0.1",
+  "background": {
+    "scripts": [
+      "lib/date.js",
+      "background.js",
+      "features.js"
+    ],
+    "persistent": false
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://calendar.google.com/calendar/*"
+      ],
+      "js": [
+        "lib/jquery.min.js",
+        "contentscript.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "content_security_policy": "default-src 'self'; style-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "description": "A Description.",
+  "incognito": "spanning"
+}
