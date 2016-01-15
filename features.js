@@ -1,47 +1,58 @@
-var util = {
-  tokenize: (input) => input.split(' '),
+(function() {
+  var allDayNames = [];
+  ["dayNames", "abbreviatedDayNames", "shortestDayNames"].forEach(function(key) {
+    Array.prototype.push.apply(allDayNames, Date.CultureInfo[key]);
+  });
+  Date.CultureInfo.allDayNames = allDayNames;
+})();
 
-  detokenize: (input) => input.join(' '),
-};
+var features = {
+  // If first or last 1 or 2 words are a day of the week, replace with a full date
+  "The day of the week is never in the past.": function(input, conversion) {
+    var output = input.split(' ');
 
-var features = [
-  {
-    name: "The day of the week is never in the past.",
-    transformations: [
-      util.tokenize,
+    if (output.length < 2) {
+      return input;
+    }
 
-      // If first 1 or 2 word are a day of the week, replace with a full date
-      function(input, conversion) {
-        var output = input.slice();
-        if (output[0].toUpperCase() in {THIS: 1, NEXT: 1}) {
-          output = output.slice(1);
-        }
-        output.unshift("next"); // date.js understands "next foo" as 1-7 days from now
+    function isDay(pos) {
+      if (pos < 0) pos = output.length + pos;
+      return Date.CultureInfo.allDayNames.some(day => 
+        day.toUpperCase() === output[pos].toUpperCase()
+      );
+    }
+    function isNext(pos) {
+      if (pos < 0) pos = output.length + pos;
+      return (output[pos].toUpperCase() in {THIS:1, NEXT:1, ON:1});
+    }
 
-        var possible_day = output.slice(0, 2).join(" ");
-        output = output.slice(2);
+    // Remove possible "next/this/on" words, all of which we want to
+    // interpret as "the next day excluding today".
+    if (isNext(0) && isDay(1)) {
+      output.splice(0, 1);
+    }
+    if (isNext(-2) && isDay(-1)) {
+      output.splice(output.length - 2, 1);
+    }
+    if (!(isDay(0) ^ isDay(-1))) {
+      return input; // ambiguous or missing days
+    }
 
-        console.log("possible day: " + possible_day);
-        var date = Date.parse(possible_day);
+    var dayword = output.splice((isDay(0) ? 0: -1), 1);
 
-        console.log(date);
-        if (date === null) {
-          return input; // no modification
-        }
+    // date.js knows "next sun" is always 1-7 days ahead
+    var date = Date.parse("next " + dayword); 
 
-        output.unshift(date.toLocaleDateString());
-        return output;
-      },
-
-      util.detokenize
-    ]
+    output.unshift(date.toLocaleDateString());
+    return output.join(' ');
   },
 
   // TODO: "Missing month is allowed"
-];
+};
 
 
 // Register all features.
-features.forEach(feature => {
-  Array.prototype.push.apply(Conversion.transformations, feature.transformations);
+Object.keys(features).forEach(name => {
+  var fn = features[name];
+  Conversion.steps.push({name: name, fn: fn});
 });

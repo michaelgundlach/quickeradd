@@ -3,11 +3,11 @@
 
 ---
 
-*Version 0.1*:
+*Version 0.2*:
 
 **Feature: The day of the week is never in the past.**
 
-On Thursday, if you quick add "Tuesday foo":
+On Thursday, if you quick add "Tuesday foo" or "foo Tuesday":
  - Without Quicker Add, the event will be placed on the past Tuesday.
  - With Quicker Add, the event will be placed next Tuesday.
 

@@ -12,18 +12,18 @@ chrome.runtime.onMessage.addListener(function(req, sender, sendResponse) {
 
 
 // Represents a conversion from smart text to dumb text as a series of
-// transformations.
+// steps.
 function Conversion(text) {
   this._outputs = [text];
 }
 Conversion.prototype = {
   convert: function() {
     var that = this;
-    Conversion.transformations.forEach(function(transform) {
-      var result = transform(that.current(), that);
+    Conversion.steps.forEach(function(step) {
+      var result = step.fn(that.current(), that);
       that._outputs.push(result);
 
-      console.log("step: '" +
+      console.log("step '" + step.name + "': " + 
                   that.previous() + "' => '" + that.current() + "'");
     });
 
@@ -34,4 +34,4 @@ Conversion.prototype = {
   first:    function() { return this._outputs[0]; },
   all:      function() { return this._outputs.slice() },
 };
-Conversion.transformations = [];
+Conversion.steps = [];
