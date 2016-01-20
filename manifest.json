@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Quicker Add",
-  "version": "0.2",
+  "version": "0.2.1",
   "background": {
     "scripts": [
       "lib/date.js",
