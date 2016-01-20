@@ -1,11 +1,21 @@
-// TODO: why does "monday foo" work on tuesday but "mon foo" puts it *on* tuesday?
-
 (function() {
+  var $C = Date.CultureInfo;
+  var $keys = ["dayNames", "abbreviatedDayNames", "shortestDayNames"];
   var allDayNames = [];
-  ["dayNames", "abbreviatedDayNames", "shortestDayNames"].forEach(function(key) {
-    Array.prototype.push.apply(allDayNames, Date.CultureInfo[key]);
+  $keys.forEach(function(key) {
+    Array.prototype.push.apply(allDayNames, $C[key]);
   });
-  Date.CultureInfo.allDayNames = allDayNames.map(w => w.toUpperCase());
+  $C.allDayNames = allDayNames.map(w => w.toUpperCase());
+  // Returns "Monday" for "mo" or "Mon" or "monday"; returns null if no match.
+  $C.toCanonicalDay = function(day) {
+    day = day.toUpperCase();
+    for (var i=0; i < $keys[0].length; i++) {
+      if ($keys.some(k => $C[k][i].toUpperCase() === day)) {
+        return $C.dayNames[i];
+      }
+    }
+    return null;
+  }
 })();
 
 var features = {
@@ -33,14 +43,17 @@ var features = {
     }
 
     var dayPos = words.indexOf(types.DAY);
-    var dayWord = output.splice(dayPos, 1);
+    var dayWord = output.splice(dayPos, 1)[0];
 
     var hasNEXT = (dayPos > 0 && words[dayPos - 1] === types.NEXT);
     if (hasNEXT) {
       output.splice(dayPos - 1, 1); // delete it
     }
 
-    // date.js knows "next sun" is always 1-7 days ahead
+    // date.js (on Tuesday) thinks next "mon" == today(!?) and "mo" = next month
+    dayWord = Date.CultureInfo.toCanonicalDay(dayWord);
+    console.log("To " + dayWord);
+    // date.js knows "next Sunday" is always 1-7 days ahead
     var date = Date.parse("next " + dayWord);
 
     output.unshift(date.toLocaleDateString());
