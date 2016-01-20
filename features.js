@@ -23,20 +23,21 @@
     }
     return null;
   }
-  $C.ordinals = Array(31).map((_, i) => i + "TH").slice(4);
-  $C.ordinals.unshift("1ST", "2ND", "3RD");
+  $C.ordinalsRe = /([1-9]|[12][0-9]|3[0-1])(ST|ND|RD|TH)/;
   
   var equals = x => (y => x === y);
 
-  var types = { DAY: 0, NEXT: 1, ORDINAL: 2, OTHER: 3 };
+  var types = { DAY: 0, NEXT: 1, ORDINAL: 2, MONTH: 3, OTHER: -1 };
   var typeMapper = function(word) {
     word = word.toUpperCase();
-    if (Date.CultureInfo.allDayNames.some(equals(word))) {
+    if ($C.allDayNames.some(equals(word))) {
       return types.DAY;
     } else if (word in {THIS:1, NEXT:1, ON:1}) {
       return types.NEXT;
-    } else if ($C.ordinals.some(equals(word))) {
+    } else if ($C.ordinalsRe.test(word)) {
       return types.ORDINAL;
+    } else if ($C.allMonthNames.some(equals(word))) {
+      return types.MONTH;
     } else {
       return types.OTHER;
     }
@@ -64,7 +65,6 @@
 
       // date.js (on Tuesday) thinks next "mon" == today(!?) and "mo" = next month
       dayWord = Date.CultureInfo.toCanonicalDay(dayWord);
-      console.log("To " + dayWord);
       // date.js knows "next Sunday" is always 1-7 days ahead
       var date = Date.parse("next " + dayWord);
 
@@ -77,7 +77,7 @@
       var output = input.split(' ');
       var words = output.map(typeMapper);
       var ordCount = words.filter(equals(types.ORDINAL)).length;
-      if (ordCount != -1) {
+      if (ordCount != 1) {
         return input;
       }
 
@@ -89,12 +89,11 @@
         return input;
       }
 
-      var month = Date.today().getMonthName();
-      if (Date.parse(ordWord) < Date.today()) {
-        month = Date.parse("1 month ago").getMonthName();
+      var date = Date.parse(ordWord);
+      if (date < Date.today()) {
+        date.addMonths(1);
       }
-      var date = month + " " + output.splice(ordPos, 1);
-      output.unshift(Date.parse(date).toLocaleDateString());
+      output.unshift(date.toLocaleDateString());
       return output.join(' ');
     }
   };
