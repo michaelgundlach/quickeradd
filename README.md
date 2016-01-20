@@ -3,13 +3,15 @@
 
 ---
 
-*Version 0.2*:
+*Version 0.2.1*:
 
 **Feature: The day of the week is never in the past.**
 
-On Thursday, if you quick add "Tuesday foo" or "foo Tuesday":
+On Thursday, if you quick add "8pm Tuesday foo" or "foo Tuesday":
  - Without Quicker Add, the event will be placed on the past Tuesday.
  - With Quicker Add, the event will be placed next Tuesday.
+
+[Installer here.](https://chrome.google.com/webstore/detail/quicker-add/ljegjmgpeggcplnmgcbaeliclmfekeha)
 
 ---
 
