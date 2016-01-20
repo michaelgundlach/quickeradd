@@ -23,7 +23,7 @@ Conversion.prototype = {
       var result = step.fn(that.current(), that);
       that._outputs.push(result);
 
-      console.log("step '" + step.name + "': " + 
+      console.log("Step '" + step.name + "': '" + 
                   that.previous() + "' => '" + that.current() + "'");
     });
 

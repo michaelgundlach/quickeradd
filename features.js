@@ -1,16 +1,23 @@
 (function() {
   var $C = Date.CultureInfo;
-  var $keys = ["dayNames", "abbreviatedDayNames", "shortestDayNames"];
-  var allDayNames = [];
-  $keys.forEach(function(key) {
-    Array.prototype.push.apply(allDayNames, $C[key]);
-  });
-  $C.allDayNames = allDayNames.map(w => w.toUpperCase());
+  var concat = function(keys) {
+    var result = [];
+    keys.forEach(function(key) {
+      Array.prototype.push.apply(result, $C[key]);
+    });
+    return result.map(w => w.toUpperCase());
+  };
+
+  var $dayKeys = ["dayNames", "abbreviatedDayNames", "shortestDayNames"];
+  $C.allDayNames = concat($dayKeys);
+  var $monthKeys = ["monthNames", "abbreviatedMonthNames"];
+  $C.allMonthNames = concat($monthKeys);
+
   // Returns "Monday" for "mo" or "Mon" or "monday"; returns null if no match.
   $C.toCanonicalDay = function(day) {
     day = day.toUpperCase();
-    for (var i=0; i < $keys[0].length; i++) {
-      if ($keys.some(k => $C[k][i].toUpperCase() === day)) {
+    for (var i=0; i < $dayKeys[0].length; i++) {
+      if ($dayKeys.some(k => $C[k][i].toUpperCase() === day)) {
         return $C.dayNames[i];
       }
     }
@@ -20,6 +27,7 @@
   $C.ordinals.unshift("1ST", "2ND", "3RD");
   
   var equals = x => (y => x === y);
+
   var types = { DAY: 0, NEXT: 1, ORDINAL: 2, OTHER: 3 };
   var typeMapper = function(word) {
     word = word.toUpperCase();
@@ -68,11 +76,26 @@
     "Missing month is allowed.": function(input, conversion) {
       var output = input.split(' ');
       var words = output.map(typeMapper);
-      if (words.some(equals(types.ORDINAL))) {
-        console.log("Found ordinals!");
+      var ordCount = words.filter(equals(types.ORDINAL)).length;
+      if (ordCount != -1) {
+        return input;
       }
-      // TODO: finish.
-      return input;
+
+      var ordPos = words.indexOf(types.ORDINAL);
+      var ordWord = output.splice(ordPos, 1)[0];
+
+      var hasMONTH = (ordPos > 0 && words[ordPos - 1] === types.MONTH);
+      if (hasMONTH) {
+        return input;
+      }
+
+      var month = Date.today().getMonthName();
+      if (Date.parse(ordWord) < Date.today()) {
+        month = Date.parse("1 month ago").getMonthName();
+      }
+      var date = month + " " + output.splice(ordPos, 1);
+      output.unshift(Date.parse(date).toLocaleDateString());
+      return output.join(' ');
     }
   };
 
