@@ -1,9 +1,11 @@
+// TODO: why does "monday foo" work on tuesday but "mon foo" puts it *on* tuesday?
+
 (function() {
   var allDayNames = [];
   ["dayNames", "abbreviatedDayNames", "shortestDayNames"].forEach(function(key) {
     Array.prototype.push.apply(allDayNames, Date.CultureInfo[key]);
   });
-  Date.CultureInfo.allDayNames = allDayNames;
+  Date.CultureInfo.allDayNames = allDayNames.map(w => w.toUpperCase());
 })();
 
 var features = {
@@ -11,37 +13,35 @@ var features = {
   "The day of the week is never in the past.": function(input, conversion) {
     var output = input.split(' ');
 
-    if (output.length < 2) {
+    var types = { DAY: 0, NEXT: 1, OTHER: 2 };
+    var equals = x => (y => x === y);
+
+    var words = output.map(word => {
+      word = word.toUpperCase();
+      if (Date.CultureInfo.allDayNames.some(equals(word))) {
+        return types.DAY;
+      } else if (word in {THIS:1, NEXT:1, ON:1}) {
+        return types.NEXT;
+      } else {
+        return types.OTHER;
+      }
+    });
+
+    var dayCount = words.filter(equals(types.DAY)).length;
+    if (dayCount != 1) {
       return input;
     }
 
-    function isDay(pos) {
-      if (pos < 0) pos = output.length + pos;
-      return Date.CultureInfo.allDayNames.some(day => 
-        day.toUpperCase() === output[pos].toUpperCase()
-      );
-    }
-    function isNext(pos) {
-      if (pos < 0) pos = output.length + pos;
-      return (output[pos].toUpperCase() in {THIS:1, NEXT:1, ON:1});
-    }
+    var dayPos = words.indexOf(types.DAY);
+    var dayWord = output.splice(dayPos, 1);
 
-    // Remove possible "next/this/on" words, all of which we want to
-    // interpret as "the next day excluding today".
-    if (isNext(0) && isDay(1)) {
-      output.splice(0, 1);
+    var hasNEXT = (dayPos > 0 && words[dayPos - 1] === types.NEXT);
+    if (hasNEXT) {
+      output.splice(dayPos - 1, 1); // delete it
     }
-    if (isNext(-2) && isDay(-1)) {
-      output.splice(output.length - 2, 1);
-    }
-    if (!(isDay(0) ^ isDay(-1))) {
-      return input; // ambiguous or missing days
-    }
-
-    var dayword = output.splice((isDay(0) ? 0: -1), 1);
 
     // date.js knows "next sun" is always 1-7 days ahead
-    var date = Date.parse("next " + dayword); 
+    var date = Date.parse("next " + dayWord);
 
     output.unshift(date.toLocaleDateString());
     return output.join(' ');
